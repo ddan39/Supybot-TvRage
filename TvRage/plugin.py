@@ -14,6 +14,7 @@ import supybot.callbacks as callbacks
 import math
 import datetime
 import requests
+from local import rfc3339
 from urllib import urlencode
 
 
@@ -66,21 +67,25 @@ class TvRage(callbacks.Plugin):
             out.append('\x0307on %(Network)s\x03' % showinfo)
         irc.reply(' / '.join(out), prefixNick=False)
 
-        nowDate = datetime.datetime.now()
+        date_now = rfc3339.now()
 
         if shownext:
             if 'Next Episode' in showinfo:
                 epnumber, epname, epdate = showinfo['Next Episode'].split('^')
-                epdateparts = epdate.split('/')
-                if len(epdateparts) == 3:
-                    month, day, year = epdateparts
-                    epDate = datetime.datetime(int(year), self.months[month], int(day))
-                elif len(epdateparts) == 2:
-                    month, year = epdateparts
-                    epDate = datetime.datetime(int(year), self.months[month], 1)
-                days = epDate - nowDate
-                days = int(math.ceil((days.days * 24 * 3600 + days.seconds) / 86400.0))
-                irc.reply('\x02Next\x02 /\x0307 %s - %s\x03 / \x0307Airs on %s, %s days from now\x03' % (epnumber, epname, epdate, days), prefixNick=False)
+                date_next = rfc3339.parse_datetime(showinfo['RFC3339'])
+                delta_next = date_next - date_now
+
+                if delta_next.days > 1:
+                    from_now = '%s days from now' % delta_next.days
+                else:
+                    td = delta_next
+                    hours_from_now = (((td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6) / 60.0 / 60.0)
+                    if hours_from_now < 0:
+                        from_now = '%.2f hours ago' % (hours_from_now * -1)
+                    else:
+                        from_now = '%.2f hours from now' % hours_from_now
+
+                irc.reply('\x02Next\x02 /\x0307 %s - %s\x03 / \x0307Airs on %s, %s\x03' % (epnumber, epname, epdate, from_now), prefixNick=False)
             else:
                 irc.error('No next episode', prefixNick=False)
         if showlast:
