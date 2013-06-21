@@ -12,8 +12,8 @@ import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 
 import math
+import urllib2
 import datetime
-import requests
 from local import rfc3339
 from urllib import urlencode
 
@@ -47,14 +47,14 @@ class TvRage(callbacks.Plugin):
             if opt == 'e' or opt == 'extra':
                 showextra = True
 
-        r = requests.get('http://services.tvrage.com/tools/quickinfo.php?%s' % urlencode({'show': text}))
+        r = urllib2.urlopen('http://services.tvrage.com/tools/quickinfo.php?%s' % urlencode({'show': text})).read()
 
-        if r.text.startswith('No Show Results Were Found For'):
+        if r.startswith('No Show Results Were Found For'):
             irc.error('No show found')
             return
 
         showinfo = {}
-        for rline in r.text[5:].splitlines():
+        for rline in r[5:].splitlines():
             a,b = rline.split('@', 1)
             showinfo[a] = b
 
