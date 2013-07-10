@@ -72,20 +72,23 @@ class TvRage(callbacks.Plugin):
         if shownext:
             if 'Next Episode' in showinfo:
                 epnumber, epname, epdate = showinfo['Next Episode'].split('^')
-                date_next = rfc3339.parse_datetime(showinfo['RFC3339'])
-                delta_next = date_next - date_now
+                if 'RFC3339' in showinfo:
+                    date_next = rfc3339.parse_datetime(showinfo['RFC3339'])
+                    delta_next = date_next - date_now
 
-                if delta_next.days > 1:
-                    from_now = '%s days from now' % delta_next.days
-                else:
-                    td = delta_next
-                    hours_from_now = (((td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6) / 60.0 / 60.0)
-                    if hours_from_now < 0:
-                        from_now = '%.2f hours ago' % (hours_from_now * -1)
+                    if delta_next.days > 1:
+                        from_now = '%s days from now' % delta_next.days
                     else:
-                        from_now = '%.2f hours from now' % hours_from_now
+                        td = delta_next
+                        hours_from_now = (((td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6) / 60.0 / 60.0)
+                        if hours_from_now < 0:
+                            from_now = ', %.2f hours ago' % (hours_from_now * -1)
+                        else:
+                            from_now = ', %.2f hours from now' % hours_from_now
+                else:
+                    from_now = ''
 
-                irc.reply('\x02Next\x02 /\x0307 %s - %s\x03 / \x0307Airs on %s, %s\x03' % (epnumber, epname, epdate, from_now), prefixNick=False)
+                irc.reply('\x02Next\x02 /\x0307 %s - %s\x03 / \x0307Airs on %s%s\x03' % (epnumber, epname, epdate, from_now), prefixNick=False)
             else:
                 irc.error('No next episode', prefixNick=False)
         if showlast:
