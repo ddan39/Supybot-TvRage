@@ -77,7 +77,7 @@ class TvRage(callbacks.Plugin):
                     delta_next = date_next - date_now
 
                     if delta_next.days > 1:
-                        from_now = '%s days from now' % delta_next.days
+                        from_now = ', %s days from now' % delta_next.days
                     else:
                         td = delta_next
                         hours_from_now = (((td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6) / 60.0 / 60.0)
