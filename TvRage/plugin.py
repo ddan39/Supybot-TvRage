@@ -13,7 +13,6 @@ import supybot.callbacks as callbacks
 
 import math
 import urllib2
-import datetime
 from local import rfc3339
 from urllib import urlencode
 
