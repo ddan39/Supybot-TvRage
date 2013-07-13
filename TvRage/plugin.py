@@ -46,7 +46,11 @@ class TvRage(callbacks.Plugin):
             if opt == 'e' or opt == 'extra':
                 showextra = True
 
-        r = urllib2.urlopen('http://services.tvrage.com/tools/quickinfo.php?%s' % urlencode({'show': text})).read()
+        try:
+            r = urllib2.urlopen('http://services.tvrage.com/tools/quickinfo.php?%s' % urlencode({'show': text})).read()
+        except Exception as e:
+            irc.error(str(e))
+            return
 
         if r.startswith('No Show Results Were Found For'):
             irc.error('No show found')
