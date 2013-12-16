@@ -13,6 +13,7 @@ import supybot.callbacks as callbacks
 
 import math
 import urllib2
+import datetime
 from local import rfc3339
 from urllib import urlencode
 
@@ -120,6 +121,57 @@ class TvRage(callbacks.Plugin):
         irc.reply('\x02Show URL\x02 / \x0307%(Show URL)s\x03' % showinfo, prefixNick=False)
 
     tvrage = wrap(tvrage, [getopts({'n': '', 'next': '', 'l': '', 'last': '', 'e': '', 'extra': ''}), 'text'])
+
+
+    def tvschedule(self, irc, msg, args, text):
+        """Show tv show schedule for certain day"""
+
+        now_est = datetime.datetime.now() - datetime.timedelta(hours=8)
+
+        try:
+            r = urllib2.Request('http://services.tvrage.com/tools/quickschedule.php',
+                    headers={'Date': now_est.strftime('%a, %d %b %Y %H:%M:%S GMT')})
+            p = urllib2.urlopen(r).read()
+        except Exception as e:
+            irc.error(str(e))
+            return
+
+        days_dict = {}
+        days = p.split('\n\n\n')
+        for x in days:
+            x = x.split('\n', 1)
+            for a in ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'):
+                if a in x[0]: 
+                    days_dict[a] = x
+
+        text = text.lower()
+
+        if text == 'tomorrow':
+            now_est += datetime.timedelta(days=1)
+            sched = days_dict[now_est.strftime('%A')]
+        elif text in ('today', 'tonight'): sched = days_dict[now_est.strftime('%A')]
+        elif text in ('sun', 'sunday'): sched = days_dict['Sunday']
+        elif text in ('mon', 'monday'): sched = days_dict['Monday']
+        elif text in ('tue', 'tuesday'): sched = days_dict['Tuesday']
+        elif text in ('wed', 'wednesday'): sched = days_dict['Wednesday']
+        elif text in ('thur', 'thr', 'thursday'): sched = days_dict['Thursday']
+        elif text in ('fri', 'friday'): sched = days_dict['Friday']
+        elif text in ('sat', 'saturday'): sched = days_dict['Saturday']
+
+
+        day, sched = sched
+        irc.reply('\x02Sending you PM with schedule for %s\x02' % day[5:-6])
+        sched = sched.split('[TIME]')[1:]
+        for x in sched:
+            shows = []
+            x = x.split('\n', 1)
+            time = ('\x02\x0307 %s\x03' % x[0][:-7])
+            for y in x[1].split('[/SHOW]\n[SHOW]'):
+                y = y.replace('[SHOW]', '').replace('[/SHOW]', '').strip()
+                shows.append(y.split('^')[1])
+            irc.reply('%s: %s' % (time, ', '.join(shows)), private=True, prefixNick=False)
+
+    tvschedule = wrap(tvschedule, ['text'])
 
 Class = TvRage
 
